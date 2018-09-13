@@ -28,7 +28,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 			t.Fatalf("unable to get new address: %v", err)
 		}
 
-		// Next, send amt BTC to this address, spending from one of our mature
+		// Next, send amt CTT to this address, spending from one of our mature
 		// coinbase outputs.
 		addrScript, err := txscript.PayToAddrScript(addr)
 		if err != nil {
@@ -63,7 +63,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 
 	// First, generate a small spend which will require only a single
 	// input.
-	txid := genSpend(btcutil.Amount(5 * btcutil.SatoshiPerBitcoin))
+	txid := genSpend(btcutil.Amount(5 * btcutil.MystikoPerBitcoin))
 
 	// Generate a single block, the transaction the wallet created should
 	// be found in this block.
@@ -75,7 +75,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 
 	// Next, generate a spend much greater than the block reward. This
 	// transaction should also have been mined properly.
-	txid = genSpend(btcutil.Amount(500 * btcutil.SatoshiPerBitcoin))
+	txid = genSpend(btcutil.Amount(500 * btcutil.MystikoPerBitcoin))
 	blockHashes, err = r.Node.Generate(1)
 	if err != nil {
 		t.Fatalf("unable to generate single block: %v", err)
@@ -335,7 +335,7 @@ func testGenerateAndSubmitBlock(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(btcutil.SatoshiPerBitcoin, pkScript)
+	output := wire.NewTxOut(btcutil.MystikoPerBitcoin, pkScript)
 
 	const numTxns = 5
 	txns := make([]*btcutil.Tx, 0, numTxns)
@@ -402,7 +402,7 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(btcutil.SatoshiPerBitcoin, pkScript)
+	output := wire.NewTxOut(btcutil.MystikoPerBitcoin, pkScript)
 
 	const numTxns = 5
 	txns := make([]*btcutil.Tx, 0, numTxns)
@@ -478,8 +478,8 @@ func testMemWalletReorg(r *Harness, t *testing.T) {
 	}
 	defer harness.TearDown()
 
-	// The internal wallet of this harness should now have 250 BTC.
-	expectedBalance := btcutil.Amount(250 * btcutil.SatoshiPerBitcoin)
+	// The internal wallet of this harness should now have 250 CTT.
+	expectedBalance := btcutil.Amount(250 * btcutil.MystikoPerBitcoin)
 	walletBalance := harness.ConfirmedBalance()
 	if expectedBalance != walletBalance {
 		t.Fatalf("wallet balance incorrect: expected %v, got %v",
@@ -496,7 +496,7 @@ func testMemWalletReorg(r *Harness, t *testing.T) {
 		t.Fatalf("unable to join node on blocks: %v", err)
 	}
 
-	// The original wallet should now have a balance of 0 BTC as its entire
+	// The original wallet should now have a balance of 0 CTT as its entire
 	// chain should have been decimated in favor of the main harness'
 	// chain.
 	expectedBalance = btcutil.Amount(0)
@@ -520,14 +520,14 @@ func testMemWalletLockedOutputs(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	outputAmt := btcutil.Amount(50 * btcutil.SatoshiPerBitcoin)
+	outputAmt := btcutil.Amount(50 * btcutil.MystikoPerBitcoin)
 	output := wire.NewTxOut(int64(outputAmt), pkScript)
 	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10, true)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 
-	// The current wallet balance should now be at least 50 BTC less
+	// The current wallet balance should now be at least 50 CTT less
 	// (accounting for fees) than the period balance
 	currentBalance := r.ConfirmedBalance()
 	if !(currentBalance <= startingBalance-outputAmt) {
@@ -601,9 +601,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestHarness(t *testing.T) {
-	// We should have (numMatureOutputs * 50 BTC) of mature unspendable
+	// We should have (numMatureOutputs * 50 CTT) of mature unspendable
 	// outputs.
-	expectedBalance := btcutil.Amount(numMatureOutputs * 50 * btcutil.SatoshiPerBitcoin)
+	expectedBalance := btcutil.Amount(numMatureOutputs * 50 * btcutil.MystikoPerBitcoin)
 	harnessBalance := mainHarness.ConfirmedBalance()
 	if harnessBalance != expectedBalance {
 		t.Fatalf("expected wallet balance of %v instead have %v",

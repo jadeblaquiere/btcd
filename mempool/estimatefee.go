@@ -47,7 +47,7 @@ const (
 
 	bytePerKb = 1000
 
-	btcPerSatoshi = 1E-8
+	btcPerMystiko = 1E-8
 )
 
 var (
@@ -56,38 +56,38 @@ var (
 	EstimateFeeDatabaseKey = []byte("estimatefee")
 )
 
-// SatoshiPerByte is number with units of satoshis per byte.
-type SatoshiPerByte float64
+// MystikoPerByte is number with units of satoshis per byte.
+type MystikoPerByte float64
 
 // BtcPerKilobyte is number with units of bitcoins per kilobyte.
 type BtcPerKilobyte float64
 
 // ToBtcPerKb returns a float value that represents the given
-// SatoshiPerByte converted to satoshis per kb.
-func (rate SatoshiPerByte) ToBtcPerKb() BtcPerKilobyte {
+// MystikoPerByte converted to satoshis per kb.
+func (rate MystikoPerByte) ToBtcPerKb() BtcPerKilobyte {
 	// If our rate is the error value, return that.
-	if rate == SatoshiPerByte(-1.0) {
+	if rate == MystikoPerByte(-1.0) {
 		return -1.0
 	}
 
-	return BtcPerKilobyte(float64(rate) * bytePerKb * btcPerSatoshi)
+	return BtcPerKilobyte(float64(rate) * bytePerKb * btcPerMystiko)
 }
 
 // Fee returns the fee for a transaction of a given size for
 // the given fee rate.
-func (rate SatoshiPerByte) Fee(size uint32) btcutil.Amount {
+func (rate MystikoPerByte) Fee(size uint32) btcutil.Amount {
 	// If our rate is the error value, return that.
-	if rate == SatoshiPerByte(-1) {
+	if rate == MystikoPerByte(-1) {
 		return btcutil.Amount(-1)
 	}
 
 	return btcutil.Amount(float64(rate) * float64(size))
 }
 
-// NewSatoshiPerByte creates a SatoshiPerByte from an Amount and a
+// NewMystikoPerByte creates a MystikoPerByte from an Amount and a
 // size in bytes.
-func NewSatoshiPerByte(fee btcutil.Amount, size uint32) SatoshiPerByte {
-	return SatoshiPerByte(float64(fee) / float64(size))
+func NewMystikoPerByte(fee btcutil.Amount, size uint32) MystikoPerByte {
+	return MystikoPerByte(float64(fee) / float64(size))
 }
 
 // observedTransaction represents an observed transaction and some
@@ -97,7 +97,7 @@ type observedTransaction struct {
 	hash chainhash.Hash
 
 	// The fee per byte of the transaction in satoshis.
-	feeRate SatoshiPerByte
+	feeRate MystikoPerByte
 
 	// The block height when it was observed.
 	observed int32
@@ -120,7 +120,7 @@ func deserializeObservedTransaction(r io.Reader) (*observedTransaction, error) {
 	// The first 32 bytes should be a hash.
 	binary.Read(r, binary.BigEndian, &ot.hash)
 
-	// The next 8 are SatoshiPerByte
+	// The next 8 are MystikoPerByte
 	binary.Read(r, binary.BigEndian, &ot.feeRate)
 
 	// And next there are two uint32's.
@@ -173,7 +173,7 @@ type FeeEstimator struct {
 	bin      [estimateFeeDepth][]*observedTransaction
 
 	// The cached estimates.
-	cached []SatoshiPerByte
+	cached []MystikoPerByte
 
 	// Transactions that have been removed from the bins. This allows us to
 	// revert in case of an orphaned block.
@@ -212,7 +212,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 
 		ef.observed[hash] = &observedTransaction{
 			hash:     hash,
-			feeRate:  NewSatoshiPerByte(btcutil.Amount(t.Fee), size),
+			feeRate:  NewMystikoPerByte(btcutil.Amount(t.Fee), size),
 			observed: t.Height,
 			mined:    mining.UnminedHeight,
 		}
@@ -456,7 +456,7 @@ func (ef *FeeEstimator) rollback() {
 // estimateFeeSet is a set of txs that can that is sorted
 // by the fee per kb rate.
 type estimateFeeSet struct {
-	feeRate []SatoshiPerByte
+	feeRate []MystikoPerByte
 	bin     [estimateFeeDepth]uint32
 }
 
@@ -473,9 +473,9 @@ func (b *estimateFeeSet) Swap(i, j int) {
 // estimateFee returns the estimated fee for a transaction
 // to confirm in confirmations blocks from now, given
 // the data set we have collected.
-func (b *estimateFeeSet) estimateFee(confirmations int) SatoshiPerByte {
+func (b *estimateFeeSet) estimateFee(confirmations int) MystikoPerByte {
 	if confirmations <= 0 {
-		return SatoshiPerByte(math.Inf(1))
+		return MystikoPerByte(math.Inf(1))
 	}
 
 	if confirmations > estimateFeeDepth {
@@ -516,7 +516,7 @@ func (ef *FeeEstimator) newEstimateFeeSet() *estimateFeeSet {
 		capacity += l
 	}
 
-	set.feeRate = make([]SatoshiPerByte, capacity)
+	set.feeRate = make([]MystikoPerByte, capacity)
 
 	i := 0
 	for _, b := range ef.bin {
@@ -533,10 +533,10 @@ func (ef *FeeEstimator) newEstimateFeeSet() *estimateFeeSet {
 
 // estimates returns the set of all fee estimates from 1 to estimateFeeDepth
 // confirmations from now.
-func (ef *FeeEstimator) estimates() []SatoshiPerByte {
+func (ef *FeeEstimator) estimates() []MystikoPerByte {
 	set := ef.newEstimateFeeSet()
 
-	estimates := make([]SatoshiPerByte, estimateFeeDepth)
+	estimates := make([]MystikoPerByte, estimateFeeDepth)
 	for i := 0; i < estimateFeeDepth; i++ {
 		estimates[i] = set.estimateFee(i + 1)
 	}

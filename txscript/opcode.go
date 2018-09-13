@@ -32,7 +32,7 @@ type opcode struct {
 
 // These constants are the values of the official opcodes used on the btc wiki,
 // in bitcoin core and in most if not all other references and software related
-// to handling BTC scripts.
+// to handling CTT scripts.
 const (
 	OP_0                   = 0x00 // 0
 	OP_FALSE               = 0x00 // 0 - AKA OP_0
@@ -2180,7 +2180,7 @@ type parsedSigInfo struct {
 // keys, followed by the integer number of signatures, followed by that many
 // entries as raw data representing the signatures.
 //
-// Due to a bug in the original Satoshi client implementation, an additional
+// Due to a bug in the original Mystiko client implementation, an additional
 // dummy argument is also required by the consensus rules, although it is not
 // used.  The dummy value SHOULD be an OP_0, although that is not required by
 // the consensus rules.  When the ScriptStrictMultiSig flag is set, it must be
@@ -2254,7 +2254,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	// A bug in the original Satoshi client implementation means one more
+	// A bug in the original Mystiko client implementation means one more
 	// stack value than should be used must be popped.  Unfortunately, this
 	// buggy behavior is now part of the consensus and a hard fork would be
 	// required to fix it.

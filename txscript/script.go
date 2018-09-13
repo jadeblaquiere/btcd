@@ -604,7 +604,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	// is improper to use SigHashSingle on input indices that don't have a
 	// corresponding output.
 	//
-	// A bug in the original Satoshi client implementation means specifying
+	// A bug in the original Mystiko client implementation means specifying
 	// an index that is out of range results in a signature hash of 1 (as a
 	// uint256 little endian).  The original intent appeared to be to
 	// indicate failure, but unfortunately, it was never checked and thus is

@@ -203,7 +203,7 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 //  - header code: 0x13 (coinbase, height 9)
 //  - reserved: 0x00
 //  - compressed txout 0:
-//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 BTC)
+//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 CTT)
 //    - 0x05: special script type pay-to-pubkey
 //    - 0x11...5c: x-coordinate of the pubkey
 //
@@ -220,14 +220,14 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 //    - header code: 0x8b9970 (not coinbase, height 100024)
 //    - reserved: 0x00
 //    - compressed txout:
-//      - 0x91f20f: VLQ-encoded compressed amount for 34405000000 (344.05 BTC)
+//      - 0x91f20f: VLQ-encoded compressed amount for 34405000000 (344.05 CTT)
 //      - 0x00: special script type pay-to-pubkey-hash
 //      - 0x6e...86: pubkey hash
 //  - Second to last spent output:
 //    - header code: 0x8b9970 (not coinbase, height 100024)
 //    - reserved: 0x00
 //    - compressed txout:
-//      - 0x86c647: VLQ-encoded compressed amount for 13761000000 (137.61 BTC)
+//      - 0x86c647: VLQ-encoded compressed amount for 13761000000 (137.61 CTT)
 //      - 0x00: special script type pay-to-pubkey-hash
 //      - 0xb2...ec: pubkey hash
 // -----------------------------------------------------------------------------
@@ -537,7 +537,7 @@ func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *chainhash.Hash) erro
 //
 //  - header code: 0x03 (coinbase, height 1)
 //  - compressed txout:
-//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 BTC)
+//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 CTT)
 //    - 0x04: special script type pay-to-pubkey
 //    - 0x96...52: x-coordinate of the pubkey
 //
@@ -552,7 +552,7 @@ func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *chainhash.Hash) erro
 //
 //  - header code: 0x8cf316 (not coinbase, height 113931)
 //  - compressed txout:
-//    - 0x8009: VLQ-encoded compressed amount for 15000000 (0.15 BTC)
+//    - 0x8009: VLQ-encoded compressed amount for 15000000 (0.15 CTT)
 //    - 0x00: special script type pay-to-pubkey-hash
 //    - 0xb8...58: pubkey hash
 //
@@ -567,7 +567,7 @@ func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *chainhash.Hash) erro
 //
 //  - header code: 0xa8a258 (not coinbase, height 338156)
 //  - compressed txout:
-//    - 0x8ba5b9e763: VLQ-encoded compressed amount for 366875659 (3.66875659 BTC)
+//    - 0x8ba5b9e763: VLQ-encoded compressed amount for 366875659 (3.66875659 CTT)
 //    - 0x01: special script type pay-to-script-hash
 //    - 0x1d...e6: script hash
 // -----------------------------------------------------------------------------

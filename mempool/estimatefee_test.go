@@ -64,7 +64,7 @@ func expectedFeePerKilobyte(t *TxDesc) BtcPerKilobyte {
 	size := float64(t.TxDesc.Tx.MsgTx().SerializeSize())
 	fee := float64(t.TxDesc.Fee)
 
-	return SatoshiPerByte(fee / size).ToBtcPerKb()
+	return MystikoPerByte(fee / size).ToBtcPerKb()
 }
 
 func (eft *estimateFeeTester) newBlock(txs []*wire.MsgTx) {
