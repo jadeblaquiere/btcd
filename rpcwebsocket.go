@@ -22,6 +22,7 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
+	"github.com/btcsuite/websocket"
 	"github.com/jadeblaquiere/cttd/blockchain"
 	"github.com/jadeblaquiere/cttd/btcjson"
 	"github.com/jadeblaquiere/cttd/chaincfg"
@@ -30,7 +31,6 @@ import (
 	"github.com/jadeblaquiere/cttd/txscript"
 	"github.com/jadeblaquiere/cttd/wire"
 	"github.com/jadeblaquiere/cttutil"
-	"github.com/btcsuite/websocket"
 )
 
 const (

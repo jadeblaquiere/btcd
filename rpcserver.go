@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/btcsuite/websocket"
 	"github.com/jadeblaquiere/cttd/blockchain"
 	"github.com/jadeblaquiere/cttd/blockchain/indexers"
 	"github.com/jadeblaquiere/cttd/btcec"
@@ -41,7 +42,6 @@ import (
 	"github.com/jadeblaquiere/cttd/txscript"
 	"github.com/jadeblaquiere/cttd/wire"
 	"github.com/jadeblaquiere/cttutil"
-	"github.com/btcsuite/websocket"
 )
 
 // API version constants

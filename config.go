@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/go-socks/socks"
 	"github.com/jadeblaquiere/cttd/blockchain"
 	"github.com/jadeblaquiere/cttd/chaincfg"
 	"github.com/jadeblaquiere/cttd/chaincfg/chainhash"
@@ -29,7 +30,6 @@ import (
 	"github.com/jadeblaquiere/cttd/mempool"
 	"github.com/jadeblaquiere/cttd/peer"
 	"github.com/jadeblaquiere/cttutil"
-	"github.com/btcsuite/go-socks/socks"
 	flags "github.com/jessevdk/go-flags"
 )
 
