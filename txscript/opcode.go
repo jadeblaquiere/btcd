@@ -219,11 +219,11 @@ const (
 	OP_CHECKSEQUENCEVERIFY = 0xb2 // 178 - AKA OP_NOP3
 	OP_NOP4                = 0xb3 // 179
 	OP_NOP5                = 0xb4 // 180
-	OP_REGISTERACCESSKEY   = 0xb4 // 180 - AKA OP_NOP5
 	OP_NOP6                = 0xb5 // 181
 	OP_NOP7                = 0xb6 // 182
-	OP_REGISTERNAME        = 0xb6 // 182 - AKA OP_NOP7
+	OP_REGISTERNAK         = 0xb6 // 180 - AKA OP_NOP7
 	OP_NOP8                = 0xb7 // 183
+	OP_REGISTERNAME        = 0xb7 // 180 - AKA OP_NOP8
 	OP_NOP9                = 0xb8 // 184
 	OP_NOP10               = 0xb9 // 185
 	OP_UNKNOWN186          = 0xba // 186
@@ -421,8 +421,6 @@ var opcodeArray = [256]opcode{
 	OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
 	OP_CHECKLOCKTIMEVERIFY: {OP_CHECKLOCKTIMEVERIFY, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
 	OP_CHECKSEQUENCEVERIFY: {OP_CHECKSEQUENCEVERIFY, "OP_CHECKSEQUENCEVERIFY", 1, opcodeCheckSequenceVerify},
-	OP_REGISTERACCESSKEY:   {OP_REGISTERACCESSKEY, "OP_REGISTERACCESSKEY", 1, opcodeRegisterNAK},
-	OP_REGISTERNAME:        {OP_REGISTERNAME, "OP_REGISTERNAME", 1, opcodeRegisterName},
 
 	// Stack opcodes.
 	OP_TOALTSTACK:   {OP_TOALTSTACK, "OP_TOALTSTACK", 1, opcodeToAltStack},
@@ -504,13 +502,11 @@ var opcodeArray = [256]opcode{
 	OP_CHECKMULTISIGVERIFY: {OP_CHECKMULTISIGVERIFY, "OP_CHECKMULTISIGVERIFY", 1, opcodeCheckMultiSigVerify},
 
 	// Reserved opcodes.
-	OP_NOP1: {OP_NOP1, "OP_NOP1", 1, opcodeNop},
-	OP_NOP4: {OP_NOP4, "OP_NOP4", 1, opcodeNop},
-	// replaced with OP_REGISTERACCESSKEY
-	//OP_NOP5:  {OP_NOP5, "OP_NOP5", 1, opcodeNop},
-	OP_NOP6: {OP_NOP6, "OP_NOP6", 1, opcodeNop},
-	// replaced with OP_REGISTERNAME
-	//OP_NOP7:  {OP_NOP7, "OP_NOP7", 1, opcodeNop},
+	OP_NOP1:  {OP_NOP1, "OP_NOP1", 1, opcodeNop},
+	OP_NOP4:  {OP_NOP4, "OP_NOP4", 1, opcodeNop},
+	OP_NOP5:  {OP_NOP5, "OP_NOP5", 1, opcodeNop},
+	OP_NOP6:  {OP_NOP6, "OP_NOP6", 1, opcodeNop},
+	OP_NOP7:  {OP_NOP7, "OP_NOP7", 1, opcodeNop},
 	OP_NOP8:  {OP_NOP8, "OP_NOP8", 1, opcodeNop},
 	OP_NOP9:  {OP_NOP9, "OP_NOP9", 1, opcodeNop},
 	OP_NOP10: {OP_NOP10, "OP_NOP10", 1, opcodeNop},
@@ -913,8 +909,8 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
 	switch op.opcode.value {
-	case OP_NOP1, OP_NOP4,
-		OP_NOP6, OP_NOP8, OP_NOP9, OP_NOP10:
+	case OP_NOP1, OP_NOP4, OP_NOP5,
+		OP_NOP6, OP_NOP7, OP_NOP8, OP_NOP9, OP_NOP10:
 		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
 			str := fmt.Sprintf("OP_NOP%d reserved for soft-fork "+
 				"upgrades", op.opcode.value-(OP_NOP1-1))
@@ -1104,17 +1100,17 @@ func opcodeReturn(op *parsedOpcode, vm *Engine) error {
 	return scriptError(ErrEarlyReturn, "script returned early")
 }
 
-// opcodeRegisterNAK returns an appropriate error since it is always an error to
-// return early from a script. Behavior is identical to OP_RETURN
+// opcodeRegisterNAK registers a Network Access Key with the blockchain.
+// the NAK includes notBefore and notAfter times for which it is valid
 func opcodeRegisterNAK(op *parsedOpcode, vm *Engine) error {
-	//return scriptError(ErrEarlyReturn, "script returned early")
+	//TODO : Validate ECDSA signature on NAK
 	return nil
 }
 
-// opcodeRegisterName returns an appropriate error since it is always an error to
-// return early from a script. Behavior is identical to OP_RETURN
+// opcodeRegisterName registers a name on the blockchain.
 func opcodeRegisterName(op *parsedOpcode, vm *Engine) error {
-	//return scriptError(ErrEarlyReturn, "script returned early")
+	//TODO : Validate Name is not currently registered to a different
+	//signature key
 	return nil
 }
 
@@ -2464,4 +2460,21 @@ func init() {
 	OpcodeByName["OP_TRUE"] = OP_TRUE
 	OpcodeByName["OP_NOP2"] = OP_CHECKLOCKTIMEVERIFY
 	OpcodeByName["OP_NOP3"] = OP_CHECKSEQUENCEVERIFY
+}
+
+func EnableCTExtendedOpcodes() {
+	for _, op := range opcodeArray {
+		switch op.value {
+		case OP_REGISTERNAK:
+			op.name = "OP_REGISTERNAK"
+			op.length = 1
+			op.opfunc = opcodeRegisterNAK
+		case OP_REGISTERNAME:
+			op.name = "OP_REGISTERNAME"
+			op.length = 1
+			op.opfunc = opcodeRegisterName
+		}
+	}
+	OpcodeByName["OP_REGISTERNAK"] = OP_REGISTERNAK
+	OpcodeByName["OP_REGISTERNAME"] = OP_REGISTERNAME
 }
