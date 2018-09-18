@@ -234,6 +234,25 @@ func TestCheckSerializedHeight(t *testing.T) {
 	}
 }
 
+func TestExpBlockReward(t *testing.T) {
+    params := &chaincfg.CtBlueNetParams
+
+    bh := int32(0)
+    br := int64(baseExpSubsidy)
+    hl := -(params.SubsidyReductionInterval)
+    for br >= (1 * btcutil.MystikoPerBitcoin) {
+        reward := CalcBlockSubsidy(bh, params)
+        if reward != br {
+            t.Fatalf("TestExpBlockReward: Reward mismatch at height %d, " +
+                "expected %d, got %d", bh, br, reward)
+        }
+        t.Logf("Reward @ block %d = %d", bh, br)
+        br >>= 1
+        bh += hl
+        hl <<= 1
+    }
+}
+
 // Block100000 defines block 100,000 of the block chain.  It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{

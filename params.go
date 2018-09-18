@@ -55,6 +55,13 @@ var simNetParams = params{
 	rpcPort: "18556",
 }
 
+// ctBlueNetParams contains parameters specific to the simulation test network
+// (wire.CtBlueNet).
+var ctBlueNetParams = params{
+	Params:  &chaincfg.CtBlueNetParams,
+	rpcPort: "17762",
+}
+
 // netName returns the name used when referring to a bitcoin network.  At the
 // time of writing, btcd currently places blocks for testnet version 3 in the
 // data and log directory "testnet", which does not match the Name field of the

@@ -41,6 +41,12 @@ const (
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * btcutil.MystikoPerBitcoin
+
+	// baseExpSubsidy is the starting subsidy amount for mined blocks for 
+    // cases where chaincfg.SubsidyReductionInterval is negative meaning that
+    // it specifies an exponential decay for the coin (e.g. ciphrtxt), in which
+    // case -SubsidyReductionInterval is a half-life for decay.
+	baseExpSubsidy = 1024 * btcutil.MystikoPerBitcoin
 )
 
 var (
@@ -196,8 +202,26 @@ func CalcBlockSubsidy(height int32, chainParams *chaincfg.Params) int64 {
 		return baseSubsidy
 	}
 
-	// Equivalent to: baseSubsidy / 2^(height/subsidyHalvingInterval)
-	return baseSubsidy >> uint(height/chainParams.SubsidyReductionInterval)
+    if chainParams.SubsidyReductionInterval > 0 {
+        // bitcoin-style halving behavior
+        // Equivalent to: baseSubsidy / 2^(height/subsidyHalvingInterval)
+        return baseSubsidy >> uint(height/chainParams.SubsidyReductionInterval)
+    } else {
+        // ciphrtxt-style decay, treat- SubsidyReductionInterval as initial half life
+        ihl := int64(0 - chainParams.SubsidyReductionInterval)
+
+        // The subsidy decays in epochs. The first epoch is approximately 7 days long
+        // and each epoch is twice as long as the previous. The reward rate for each
+        // epoch is half the previous, but the total rewards for each epoch are 
+        // approximately equal as it is essentially half as much for twice as long.
+        //
+        // All rewards are integer coins. There are 10 epochs, starting with 1024
+        // coins for the genesis block and trailing off to 1 coin per block for the
+        // final 3584 day (9.8 year) epoch, after which the reward goes to zero,
+        // yielding 67M coins
+        //
+        return (baseExpSubsidy * ihl) / (int64(height) + ihl)
+    }
 }
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to

@@ -38,6 +38,10 @@ var (
 	// simNetPowLimit is the highest proof of work value a Bitcoin block
 	// can have for the simulation test network.  It is the value 2^255 - 1.
 	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+
+	// simNetPowLimit is the highest proof of work value a Bitcoin block
+	// can have for the simulation test network.  It is the value 2^248 - 1.
+	ctBlueNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 248), bigOne)
 )
 
 // Checkpoint identifies a known good point in the block chain.  Using
@@ -568,6 +572,81 @@ var SimNetParams = Params{
 	HDCoinType: 115, // ASCII for s
 }
 
+// CtBlueNetParams defines the network parameters for the ciphrtxt blue (test)
+// network.  
+var CtBlueNetParams = Params{
+	Name:        "ctbluenet",
+	Net:         wire.CtBlueNet,
+	DefaultPort: "17761",
+	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
+
+	// Chain parameters
+	GenesisBlock:             &ctBlueGenesisBlock,
+	GenesisHash:              &ctBlueGenesisHash,
+	PowLimit:                 ctBlueNetPowLimit,
+	PowLimitBits:             0x1f007fff,
+	BIP0034Height:            0, // Always active on ctbluenet
+	BIP0065Height:            0, // Always active on ctbluenet
+	BIP0066Height:            0, // Always active on ctbluenet
+	CoinbaseMaturity:         100,
+	SubsidyReductionInterval: -10800, // 1 min blocks - 1 week = 60*24*7
+	TargetTimespan:           time.Hour * 2,       // 2 hours
+	TargetTimePerBlock:       time.Minute * 1,     // 1 minute
+	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	ReduceMinDifficulty:      false,
+	MinDiffReductionTime:     0,
+	GenerateSupported:        true,
+
+	// Checkpoints ordered from oldest to newest.
+	Checkpoints: nil,
+
+	// Consensus rule change deployments.
+	//
+	// The miner confirmation window is defined as:
+	//   target proof of work timespan / target proof of work spacing
+	RuleChangeActivationThreshold: 75, // 75% of MinerConfirmationWindow
+	MinerConfirmationWindow:       100,
+	Deployments: [DefinedDeployments]ConsensusDeployment{
+		DeploymentTestDummy: {
+			BitNumber:  28,
+			StartTime:  0,             // Always available for vote
+			ExpireTime: math.MaxInt64, // Never expires
+		},
+		DeploymentCSV: {
+			BitNumber:  0,
+			StartTime:  0,             // Always available for vote
+			ExpireTime: math.MaxInt64, // Never expires
+		},
+		DeploymentSegwit: {
+			BitNumber:  1,
+			StartTime:  0,             // Always available for vote
+			ExpireTime: math.MaxInt64, // Never expires.
+		},
+	},
+
+	// Mempool parameters
+	RelayNonStdTxs: true,
+
+	// Human-readable part for Bech32 encoded segwit addresses, as defined in
+	// BIP 173.
+	Bech32HRPSegwit: "cb", // always cb for ciphrtxt blue net
+
+	// Address encoding magics
+	PubKeyHashAddrID:        0x50, // starts with Z
+	ScriptHashAddrID:        0x8e, // starts with z
+	PrivateKeyID:            0xa3, // starts with 6 (uncompressed) or R (compressed)
+	WitnessPubKeyHashAddrID: 0x19, // starts with Gg
+	WitnessScriptHashAddrID: 0x28, // starts with ?
+
+	// BIP32 hierarchical deterministic extended key magics
+	HDPrivateKeyID: [4]byte{0x04, 0xb2, 0x43, 0x0b}, // starts with zprv
+	HDPublicKeyID:  [4]byte{0x04, 0xb2, 0x47, 0x45}, // starts with zpub
+
+	// BIP44 coin type used in the hierarchical deterministic path for
+	// address generation.
+	HDCoinType: 99, // ASCII for c
+}
+
 var (
 	// ErrDuplicateNet describes an error where the parameters for a Bitcoin
 	// network could not be set due to the network already being a standard
@@ -699,4 +778,5 @@ func init() {
 	mustRegister(&TestNet3Params)
 	mustRegister(&RegressionNetParams)
 	mustRegister(&SimNetParams)
+	mustRegister(&CtBlueNetParams)
 }

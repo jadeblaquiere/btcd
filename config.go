@@ -132,6 +132,7 @@ type config struct {
 	TestNet3             bool          `long:"testnet" description:"Use the test network"`
 	RegressionTest       bool          `long:"regtest" description:"Use the regression test network"`
 	SimNet               bool          `long:"simnet" description:"Use the simulation test network"`
+	CtBlueNet            bool          `long:"bluenet" description:"Use the ciphrtxt blue test network"`
 	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
 	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block Chain"`
@@ -545,6 +546,11 @@ func loadConfig() (*config, []string, error) {
 		// Also disable dns seeding on the simulation test network.
 		activeNetParams = &simNetParams
 		cfg.DisableDNSSeed = true
+	}
+	if cfg.CtBlueNet {
+		numNets++
+		// Also disable dns seeding on the simulation test network.
+		activeNetParams = &ctBlueNetParams
 	}
 	if numNets > 1 {
 		str := "%s: The testnet, regtest, segnet, and simnet params " +
