@@ -105,13 +105,14 @@ type config struct {
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	TestNet3      bool   `long:"testnet" description:"Connect to testnet"`
 	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
+	CtBlueNet     bool   `long:"bluenet" description:"Connect to the simulation test network"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
 	Wallet        bool   `long:"wallet" description:"Connect to wallet"`
 }
 
 // normalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func normalizeAddress(addr string, useTestNet3, useSimNet, useWallet bool) string {
+func normalizeAddress(addr string, useTestNet3, useSimNet, useCtBlueNet, useWallet bool) string {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		var defaultPort string
@@ -127,6 +128,12 @@ func normalizeAddress(addr string, useTestNet3, useSimNet, useWallet bool) strin
 				defaultPort = "18554"
 			} else {
 				defaultPort = "18556"
+			}
+		case useCtBlueNet:
+			if useWallet {
+				defaultPort = "17763"
+			} else {
+				defaultPort = "17762"
 			}
 		default:
 			if useWallet {
@@ -254,6 +261,9 @@ func loadConfig() (*config, []string, error) {
 	if cfg.SimNet {
 		numNets++
 	}
+	if cfg.CtBlueNet {
+		numNets++
+	}
 	if numNets > 1 {
 		str := "%s: The testnet and simnet params can't be used " +
 			"together -- choose one of the two"
@@ -274,7 +284,7 @@ func loadConfig() (*config, []string, error) {
 	// Add default port to RPC server based on --testnet and --wallet flags
 	// if needed.
 	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet3,
-		cfg.SimNet, cfg.Wallet)
+		cfg.SimNet, cfg.CtBlueNet, cfg.Wallet)
 
 	return &cfg, remainingArgs, nil
 }

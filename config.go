@@ -29,6 +29,7 @@ import (
 	_ "github.com/jadeblaquiere/cttd/database/ffldb"
 	"github.com/jadeblaquiere/cttd/mempool"
 	"github.com/jadeblaquiere/cttd/peer"
+    "github.com/jadeblaquiere/cttd/txscript"
 	"github.com/jadeblaquiere/cttutil"
 	flags "github.com/jessevdk/go-flags"
 )
@@ -551,6 +552,8 @@ func loadConfig() (*config, []string, error) {
 		numNets++
 		// Also disable dns seeding on the simulation test network.
 		activeNetParams = &ctBlueNetParams
+        txscript.EnableCTExtendedOpcodes()
+        fmt.Println("Enabling ciphrtxt Extended Opcodes: OP_REGISTERNAK, OP_REGISTERNAME")
 	}
 	if numNets > 1 {
 		str := "%s: The testnet, regtest, segnet, and simnet params " +
