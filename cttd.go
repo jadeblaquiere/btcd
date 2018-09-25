@@ -18,6 +18,7 @@ import (
 	"github.com/jadeblaquiere/cttd/blockchain/indexers"
 	"github.com/jadeblaquiere/cttd/database"
 	"github.com/jadeblaquiere/cttd/limits"
+	"github.com/jadeblaquiere/cttd/txscript"
 )
 
 const (
@@ -73,6 +74,11 @@ func btcdMain(serverChan chan<- *server) error {
 			http.Handle("/", profileRedirect)
 			btcdLog.Errorf("%v", http.ListenAndServe(listenAddr, nil))
 		}()
+	}
+
+	if cfg.CtBlueNet {
+		txscript.EnableCTExtendedOpcodes()
+		btcdLog.Infof("Enabling ciphrtxt Extended Opcodes: OP_REGISTERNAK, OP_REGISTERNAME")
 	}
 
 	// Write cpu profile if requested.
