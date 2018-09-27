@@ -596,6 +596,11 @@ func loadConfig() (*config, []string, error) {
 	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
 	cfg.DataDir = filepath.Join(cfg.DataDir, netName(activeNetParams))
 
+	// Append the network type to the ctmx directory so it is "namespaced"
+	// per network in the same fashion as the data directory.
+	cfg.CtmxDir = cleanAndExpandPath(cfg.CtmxDir)
+	cfg.CtmxDir = filepath.Join(cfg.CtmxDir, netName(activeNetParams))
+
 	// Append the network type to the log directory so it is "namespaced"
 	// per network in the same fashion as the data directory.
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
