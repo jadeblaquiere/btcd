@@ -14,6 +14,7 @@ import (
 	"github.com/jadeblaquiere/cttd/blockchain"
 	"github.com/jadeblaquiere/cttd/blockchain/indexers"
 	"github.com/jadeblaquiere/cttd/connmgr"
+	"github.com/jadeblaquiere/cttd/ctmsg"
 	"github.com/jadeblaquiere/cttd/database"
 	"github.com/jadeblaquiere/cttd/mempool"
 	"github.com/jadeblaquiere/cttd/mining"
@@ -57,6 +58,7 @@ var (
 	adxrLog = backendLog.Logger("ADXR")
 	amgrLog = backendLog.Logger("AMGR")
 	cmgrLog = backendLog.Logger("CMGR")
+	ctmxLog = backendLog.Logger("CTMX")
 	bcdbLog = backendLog.Logger("BCDB")
 	btcdLog = backendLog.Logger("CTTD")
 	chanLog = backendLog.Logger("CHAN")
@@ -75,6 +77,7 @@ var (
 func init() {
 	addrmgr.UseLogger(amgrLog)
 	connmgr.UseLogger(cmgrLog)
+	ctmsg.UseLogger(ctmxLog)
 	database.UseLogger(bcdbLog)
 	blockchain.UseLogger(chanLog)
 	indexers.UseLogger(indxLog)

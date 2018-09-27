@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-btcd is a full-node bitcoin implementation written in Go.
+cttd is a full-node bitcoin implementation written in Go.
 
 The default options are sane for most users.  This means btcd will work 'out of
 the box' for most users.  However, there are also a wide variety of flags that
@@ -13,7 +13,7 @@ The following section provides a usage overview which enumerates the flags.  An
 interesting point to note is that the long form of all of these options
 (except -C) can be specified in a configuration file that is automatically
 parsed when btcd starts up.  By default, the configuration file is located at
-~/.btcd/btcd.conf on POSIX-style operating systems and %LOCALAPPDATA%\btcd\btcd.conf
+~/.cttd/cttd.conf on POSIX-style operating systems and %LOCALAPPDATA%\cttd\cttd.conf
 on Windows.  The -C (--configfile) flag, as shown below, can be used to override
 this location.
 
@@ -23,6 +23,7 @@ Usage:
 Application Options:
   -V, --version             Display version information and exit
   -C, --configfile=         Path to configuration file
+      --ctmxdir=            Directory to store ciphrtxt message data
   -b, --datadir=            Directory to store data
       --logdir=             Directory to log output.
   -a, --addpeer=            Add a peer to connect with at startup

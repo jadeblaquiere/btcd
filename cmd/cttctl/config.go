@@ -26,10 +26,10 @@ const (
 )
 
 var (
-	btcdHomeDir           = btcutil.AppDataDir("btcd", false)
-	btcctlHomeDir         = btcutil.AppDataDir("btcctl", false)
-	btcwalletHomeDir      = btcutil.AppDataDir("btcwallet", false)
-	defaultConfigFile     = filepath.Join(btcctlHomeDir, "btcctl.conf")
+	btcdHomeDir           = btcutil.AppDataDir("cttd", false)
+	btcctlHomeDir         = btcutil.AppDataDir("cttctl", false)
+	btcwalletHomeDir      = btcutil.AppDataDir("cttwallet", false)
+	defaultConfigFile     = filepath.Join(btcctlHomeDir, "cttctl.conf")
 	defaultRPCServer      = "localhost"
 	defaultRPCCertFile    = filepath.Join(btcdHomeDir, "rpc.cert")
 	defaultWalletCertFile = filepath.Join(btcwalletHomeDir, "rpc.cert")
@@ -221,9 +221,9 @@ func loadConfig() (*config, []string, error) {
 		// Use config file for RPC server to create default btcctl config
 		var serverConfigPath string
 		if preCfg.Wallet {
-			serverConfigPath = filepath.Join(btcwalletHomeDir, "btcwallet.conf")
+			serverConfigPath = filepath.Join(btcwalletHomeDir, "cttwallet.conf")
 		} else {
-			serverConfigPath = filepath.Join(btcdHomeDir, "btcd.conf")
+			serverConfigPath = filepath.Join(btcdHomeDir, "cttd.conf")
 		}
 
 		err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)

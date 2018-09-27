@@ -34,11 +34,12 @@ import (
 )
 
 const (
-	defaultConfigFilename        = "btcd.conf"
+	defaultConfigFilename        = "cttd.conf"
+	defaultCtmxDirname           = "ctmx"
 	defaultDataDirname           = "data"
 	defaultLogLevel              = "info"
 	defaultLogDirname            = "logs"
-	defaultLogFilename           = "btcd.log"
+	defaultLogFilename           = "cttd.log"
 	defaultMaxPeers              = 125
 	defaultBanDuration           = time.Hour * 24
 	defaultBanThreshold          = 100
@@ -61,14 +62,15 @@ const (
 	defaultMaxOrphanTransactions = 100
 	defaultMaxOrphanTxSize       = 100000
 	defaultSigCacheMaxSize       = 100000
-	sampleConfigFilename         = "sample-btcd.conf"
+	sampleConfigFilename         = "sample-cttd.conf"
 	defaultTxIndex               = false
 	defaultAddrIndex             = false
 )
 
 var (
-	defaultHomeDir     = btcutil.AppDataDir("btcd", false)
+	defaultHomeDir     = btcutil.AppDataDir("cttd", false)
 	defaultConfigFile  = filepath.Join(defaultHomeDir, defaultConfigFilename)
+	defaultCtmxDir     = filepath.Join(defaultHomeDir, defaultCtmxDirname)
 	defaultDataDir     = filepath.Join(defaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
 	defaultRPCKeyFile  = filepath.Join(defaultHomeDir, "rpc.key")
@@ -95,6 +97,7 @@ func minUint32(a, b uint32) uint32 {
 type config struct {
 	ShowVersion          bool          `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
+	CtmxDir              string        `long:"ctmxdir" description:"Directory to store ciphrtxt message database"`
 	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
 	LogDir               string        `long:"logdir" description:"Directory to log output."`
 	AddPeers             []string      `short:"a" long:"addpeer" description:"Add a peer to connect with at startup"`
@@ -412,6 +415,7 @@ func loadConfig() (*config, []string, error) {
 		RPCMaxClients:        defaultMaxRPCClients,
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
+		CtmxDir:              defaultCtmxDir,
 		DataDir:              defaultDataDir,
 		LogDir:               defaultLogDir,
 		DbType:               defaultDbType,
@@ -476,6 +480,7 @@ func loadConfig() (*config, []string, error) {
 		defaultConfigFile {
 
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
+			fmt.Println("creating default config file")
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error creating a "+
@@ -483,6 +488,7 @@ func loadConfig() (*config, []string, error) {
 			}
 		}
 
+		fmt.Println("parsing config file " + preCfg.ConfigFile)
 		err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 		if err != nil {
 			if _, ok := err.(*os.PathError); !ok {
@@ -1092,7 +1098,7 @@ func loadConfig() (*config, []string, error) {
 	return &cfg, remainingArgs, nil
 }
 
-// createDefaultConfig copies the file sample-btcd.conf to the given destination path,
+// createDefaultConfig copies the file sample-cttd.conf to the given destination path,
 // and populates it with some randomly generated RPC username and password.
 func createDefaultConfigFile(destinationPath string) error {
 	// Create the destination directory if it does not exists
