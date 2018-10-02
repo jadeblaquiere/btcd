@@ -105,19 +105,21 @@ func btcdMain(serverChan chan<- *server) error {
 		return nil
 	}
 
-	// Load the ciphrtxt message service.
-	ctmx, err := ctmsg.New(&ctmsg.Config{
-		MessageStoreRootDir: cfg.CtmxDir,
-	})
-	if err != nil {
-		btcdLog.Errorf("%v", err)
-		return err
+	if cfg.CtBlueNet {
+		// Load the ciphrtxt message service.
+		ctmx, err := ctmsg.New(&ctmsg.Config{
+			MessageStoreRootDir: cfg.CtmxDir,
+		})
+		if err != nil {
+			btcdLog.Errorf("%v", err)
+			return err
+		}
+		defer func() {
+			// Ensure the message service is sync'd and closed on shutdown.
+			btcdLog.Infof("Gracefully shutting down the ciphrtxt message service...")
+			ctmx.Close()
+		}()
 	}
-	defer func() {
-		// Ensure the message service is sync'd and closed on shutdown.
-		btcdLog.Infof("Gracefully shutting down the ciphrtxt message service...")
-		ctmx.Close()
-	}()
 
 	// Load the block database.
 	db, err := loadBlockDB()

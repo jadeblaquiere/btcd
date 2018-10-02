@@ -66,6 +66,7 @@ var (
 	indxLog = backendLog.Logger("INDX")
 	minrLog = backendLog.Logger("MINR")
 	peerLog = backendLog.Logger("PEER")
+	restLog = backendLog.Logger("REST")
 	rpcsLog = backendLog.Logger("RPCS")
 	scrpLog = backendLog.Logger("SCRP")
 	srvrLog = backendLog.Logger("SRVR")
@@ -94,6 +95,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 	"ADXR": adxrLog,
 	"AMGR": amgrLog,
 	"CMGR": cmgrLog,
+	"CTMX": ctmxLog,
 	"BCDB": bcdbLog,
 	"CTTD": btcdLog,
 	"CHAN": chanLog,
@@ -101,6 +103,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 	"INDX": indxLog,
 	"MINR": minrLog,
 	"PEER": peerLog,
+	"REST": restLog,
 	"RPCS": rpcsLog,
 	"SCRP": scrpLog,
 	"SRVR": srvrLog,
