@@ -25,12 +25,12 @@ type Config struct {
 }
 
 type CiphrtxtMsgSvc struct {
-	ms *ctgo.MessageStore
+	MStore *ctgo.MessageStore
 }
 
 func (ctms *CiphrtxtMsgSvc) Close() {
 	log.Info("closing ciphrtxt message store database")
-	ctms.ms.Close()
+	ctms.MStore.Close()
 }
 
 func New(cfg *Config) (*CiphrtxtMsgSvc, error) {
@@ -42,7 +42,7 @@ func New(cfg *Config) (*CiphrtxtMsgSvc, error) {
 		return nil, errors.New("ctmsg:New OpenMessageStore failed : " + err.Error())
 	}
 	ctms := new(CiphrtxtMsgSvc)
-	ctms.ms = ms
+	ctms.MStore = ms
 	log.Info("ciphrtxt message store database opened")
 	return ctms, nil
 }

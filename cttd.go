@@ -16,7 +16,6 @@ import (
 	"runtime/pprof"
 
 	"github.com/jadeblaquiere/cttd/blockchain/indexers"
-	"github.com/jadeblaquiere/cttd/ctmsg"
 	"github.com/jadeblaquiere/cttd/database"
 	"github.com/jadeblaquiere/cttd/limits"
 	"github.com/jadeblaquiere/cttd/txscript"
@@ -103,22 +102,6 @@ func btcdMain(serverChan chan<- *server) error {
 	// Return now if an interrupt signal was triggered.
 	if interruptRequested(interrupt) {
 		return nil
-	}
-
-	if cfg.CtBlueNet {
-		// Load the ciphrtxt message service.
-		ctmx, err := ctmsg.New(&ctmsg.Config{
-			MessageStoreRootDir: cfg.CtmxDir,
-		})
-		if err != nil {
-			btcdLog.Errorf("%v", err)
-			return err
-		}
-		defer func() {
-			// Ensure the message service is sync'd and closed on shutdown.
-			btcdLog.Infof("Gracefully shutting down the ciphrtxt message service...")
-			ctmx.Close()
-		}()
 	}
 
 	// Load the block database.

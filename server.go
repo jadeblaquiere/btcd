@@ -28,6 +28,7 @@ import (
 	"github.com/jadeblaquiere/cttd/chaincfg"
 	"github.com/jadeblaquiere/cttd/chaincfg/chainhash"
 	"github.com/jadeblaquiere/cttd/connmgr"
+	"github.com/jadeblaquiere/cttd/ctmsg"
 	"github.com/jadeblaquiere/cttd/database"
 	"github.com/jadeblaquiere/cttd/mempool"
 	"github.com/jadeblaquiere/cttd/mining"
@@ -211,6 +212,8 @@ type server struct {
 	sigCache             *txscript.SigCache
 	hashCache            *txscript.HashCache
 	rpcServer            *rpcServer
+	restServer           *ctRestServer
+	ctMsgSvc             *ctmsg.CiphrtxtMsgSvc
 	syncManager          *netsync.SyncManager
 	chain                *blockchain.BlockChain
 	txMemPool            *mempool.TxPool
@@ -2270,6 +2273,10 @@ func (s *server) Start() {
 		s.rpcServer.Start()
 	}
 
+	if cfg.CtBlueNet {
+		s.restServer.Start()
+	}
+
 	// Start the CPU miner if generation is enabled.
 	if cfg.Generate {
 		s.cpuMiner.Start()
@@ -2295,6 +2302,10 @@ func (s *server) Stop() error {
 		s.rpcServer.Stop()
 	}
 
+	if cfg.CtBlueNet {
+		s.restServer.Stop()
+	}
+
 	// Save fee estimator state in the database.
 	s.db.Update(func(tx database.Tx) error {
 		metadata := tx.Metadata()
@@ -2302,6 +2313,12 @@ func (s *server) Stop() error {
 
 		return nil
 	})
+
+	defer func() {
+		// Ensure the message service is sync'd and closed on shutdown.
+		ctmxLog.Infof("Gracefully shutting down the ciphrtxt message service...")
+		s.ctMsgSvc.Close()
+	}()
 
 	// Signal the remaining goroutines to quit.
 	close(s.quit)
@@ -2492,6 +2509,55 @@ func setupRPCListeners() ([]net.Listener, error) {
 		listener, err := listenFunc(addr.Network(), addr.String())
 		if err != nil {
 			rpcsLog.Warnf("Can't listen on %s: %v", addr, err)
+			continue
+		}
+		listeners = append(listeners, listener)
+	}
+
+	return listeners, nil
+}
+
+// setupRESTListeners returns a slice of listeners that are configured for use
+// with the REST server depending on the configuration settings for listen
+// addresses and TLS.
+func setupRESTListeners() ([]net.Listener, error) {
+	// Setup TLS if not disabled.
+	listenFunc := net.Listen
+	if !cfg.DisableTLS {
+		// Generate the TLS cert and key file if both don't already
+		// exist.
+		if !fileExists(cfg.RPCKey) && !fileExists(cfg.RPCCert) {
+			err := genCertPair(cfg.RPCCert, cfg.RPCKey)
+			if err != nil {
+				return nil, err
+			}
+		}
+		keypair, err := tls.LoadX509KeyPair(cfg.RPCCert, cfg.RPCKey)
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig := tls.Config{
+			Certificates: []tls.Certificate{keypair},
+			MinVersion:   tls.VersionTLS12,
+		}
+
+		// Change the standard net.Listen function to the tls one.
+		listenFunc = func(net string, laddr string) (net.Listener, error) {
+			return tls.Listen(net, laddr, &tlsConfig)
+		}
+	}
+
+	netAddrs, err := parseListeners(cfg.RESTListeners)
+	if err != nil {
+		return nil, err
+	}
+
+	listeners := make([]net.Listener, 0, len(netAddrs))
+	for _, addr := range netAddrs {
+		listener, err := listenFunc(addr.Network(), addr.String())
+		if err != nil {
+			restLog.Warnf("Can't listen on %s: %v", addr, err)
 			continue
 		}
 		listeners = append(listeners, listener)
@@ -2811,6 +2877,41 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 			AddrIndex:    s.addrIndex,
 			CfIndex:      s.cfIndex,
 			FeeEstimator: s.feeEstimator,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Signal process shutdown when the RPC server requests it.
+		go func() {
+			<-s.rpcServer.RequestedProcessShutdown()
+			shutdownRequestChannel <- struct{}{}
+		}()
+	}
+
+	if cfg.CtBlueNet {
+		// Load the ciphrtxt message service.
+		s.ctMsgSvc, err = ctmsg.New(&ctmsg.Config{
+			MessageStoreRootDir: cfg.CtmxDir,
+		})
+		if err != nil {
+			btcdLog.Errorf("%v", err)
+			return nil, err
+		}
+
+		// Setup listeners for the configured RPC listen addresses and
+		// TLS settings.
+		restListeners, err := setupRESTListeners()
+		if err != nil {
+			return nil, err
+		}
+		if len(restListeners) == 0 {
+			return nil, errors.New("REST: No valid listen address")
+		}
+
+		s.restServer, err = newCtRESTServer(&restServerConfig{
+			Listeners: restListeners,
+			MStore:    s.ctMsgSvc.MStore,
 		})
 		if err != nil {
 			return nil, err

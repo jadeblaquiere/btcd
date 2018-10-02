@@ -11,9 +11,11 @@ import (
 	//"fmt"
 	"io"
 	"io/ioutil"
-	//"net"
+	"net"
 	"net/http"
 	"os"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -26,6 +28,11 @@ const (
 	restapiSemverMajor  = 1
 	restapiSemverMinor  = 0
 	restapiSemverPatch  = 0
+
+	// restAuthTimeoutSeconds is the number of seconds a connection to the
+	// REST server is allowed to stay open without authenticating before it
+	// is closed.
+	restAuthTimeoutSeconds = 10
 )
 
 var (
@@ -33,14 +40,20 @@ var (
 )
 
 type restServerConfig struct {
-	restListenerPort string
-	params           *params
-	ms               *ctgo.MessageStore
+	// Listeners defines a slice of listeners for which the REST server will
+	// take ownership of and accept connections.  Since the REST server takes
+	// ownership of these listeners, they will be closed when the REST server
+	// is stopped.
+	Listeners []net.Listener
+
+	MStore *ctgo.MessageStore
 }
 
-type CtRestServer struct {
-	Router *mux.Router
-	cfg    *restServerConfig
+type ctRestServer struct {
+	Router   *mux.Router
+	cfg      *restServerConfig
+	wg       sync.WaitGroup
+	shutdown int32
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -62,7 +75,7 @@ func respondWithFileOctetStream(w http.ResponseWriter, code int, bfile *os.File)
 	io.Copy(w, bfile)
 }
 
-func (ctrs *CtRestServer) getMessage(w http.ResponseWriter, r *http.Request) {
+func (ctrs *ctRestServer) getMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	mhash, err := hex.DecodeString(vars["msgid"])
 	if err != nil {
@@ -70,7 +83,7 @@ func (ctrs *CtRestServer) getMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mf := ctrs.cfg.ms.GetMessage(mhash)
+	mf := ctrs.cfg.MStore.GetMessage(mhash)
 	cfile, err := mf.CiphertextFile()
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Message Not Found")
@@ -80,8 +93,8 @@ func (ctrs *CtRestServer) getMessage(w http.ResponseWriter, r *http.Request) {
 	respondWithFileOctetStream(w, http.StatusOK, cfile)
 }
 
-func (ctrs *CtRestServer) postMessage(w http.ResponseWriter, r *http.Request) {
-	file, err := ioutil.TempFile("", "ctmsg")
+func (ctrs *ctRestServer) postMessage(w http.ResponseWriter, r *http.Request) {
+	file, err := ioutil.TempFile("", "MStoreg")
 	if err != nil {
 		// failed to create a temp file ? No recovery
 		respondWithError(w, http.StatusInternalServerError, "Error receiving messages")
@@ -108,7 +121,7 @@ func (ctrs *CtRestServer) postMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ctrs.cfg.ms.IngestMessageFile(mf)
+	err = ctrs.cfg.MStore.IngestMessageFile(mf)
 	if err != nil {
 		// path error on Stat() ? No recovery
 		respondWithError(w, http.StatusInternalServerError, "Error receiving messages")
@@ -119,8 +132,8 @@ func (ctrs *CtRestServer) postMessage(w http.ResponseWriter, r *http.Request) {
 	//fall through respond
 }
 
-func (ctrs *CtRestServer) listMessages(w http.ResponseWriter, r *http.Request) {
-	hlist, err := ctrs.cfg.ms.ListHashesForInterval(ctgo.UTimeToTime(0), time.Now())
+func (ctrs *ctRestServer) listMessages(w http.ResponseWriter, r *http.Request) {
+	hlist, err := ctrs.cfg.MStore.ListHashesForInterval(ctgo.UTimeToTime(0), time.Now())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error retreiving messages")
 		return
@@ -132,21 +145,59 @@ func (ctrs *CtRestServer) listMessages(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, lmr)
 }
 
-func (ctrs *CtRestServer) initializeRoutes() {
+func (ctrs *ctRestServer) initializeRoutes() {
 	ctrs.Router.HandleFunc("/messages/{msgid:[0-9abcdefABCDEF]+}", ctrs.getMessage).Methods("GET")
 	ctrs.Router.HandleFunc("/messages/", ctrs.listMessages).Methods("GET")
 	ctrs.Router.HandleFunc("/messages/", ctrs.postMessage).Methods("POST")
 }
 
-func NewCtRestServer(cfg *restServerConfig) (ctrs *CtRestServer) {
-	ctrs = new(CtRestServer)
+func newCtRESTServer(cfg *restServerConfig) (ctrs *ctRestServer, err error) {
+	ctrs = new(ctRestServer)
 	ctrs.cfg = cfg
 	ctrs.Router = mux.NewRouter()
-	return ctrs
+	return ctrs, nil
 }
 
-func (ctrs *CtRestServer) Start() {
+func (ctrs *ctRestServer) Start() {
 	rpcsLog.Trace("Starting ciphrtxt REST API server")
+
+	httpServer := &http.Server{
+		Handler: ctrs.Router,
+
+		// Timeout connections which don't complete the initial
+		// handshake within the allowed timeframe.
+		ReadTimeout: time.Second * restAuthTimeoutSeconds,
+	}
+
 	ctrs.initializeRoutes()
 
+	for _, listener := range ctrs.cfg.Listeners {
+		ctrs.wg.Add(1)
+		go func(listener net.Listener) {
+			rpcsLog.Infof("REST server listening on %s", listener.Addr())
+			httpServer.Serve(listener)
+			rpcsLog.Tracef("REST listener done for %s", listener.Addr())
+			ctrs.wg.Done()
+		}(listener)
+	}
+}
+
+// Stop is used by server.go to stop the rpc listener.
+func (ctrs *ctRestServer) Stop() error {
+	if atomic.AddInt32(&ctrs.shutdown, 1) != 1 {
+		restLog.Infof("REST server is already in the process of shutting down")
+		return nil
+	}
+	restLog.Warnf("REST server shutting down")
+	for _, listener := range ctrs.cfg.Listeners {
+		err := listener.Close()
+		if err != nil {
+			rpcsLog.Errorf("Problem shutting down REST listener: %v", err)
+			return err
+		}
+	}
+	//close(s.quit)
+	ctrs.wg.Wait()
+	restLog.Infof("REST server shutdown complete")
+	return nil
 }

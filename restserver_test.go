@@ -33,24 +33,23 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 	}
 }
 
-func TestNewCtRestServer(t *testing.T) {
-	dirname, err := ioutil.TempDir("", "ctmstest")
+func TestCtRestServerNew(t *testing.T) {
+	dirname, err := ioutil.TempDir("", "MStoretest")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir, error: %s", err.Error())
 	}
 
 	cfg := new(restServerConfig)
-	cfg.restListenerPort = ""
-	cfg.params = nil
-	cfg.ms, err = ctgo.OpenMessageStore(dirname)
+	cfg.MStore, err = ctgo.OpenMessageStore(dirname)
 	if err != nil {
 		t.Fatalf("Failed to open MessageStore, error: %s", err.Error())
 	}
 
-	ctrs := NewCtRestServer(cfg)
-	if ctrs == nil {
-		t.Fatalf("Failed to create CtRestServer")
+	ctrs, err := newCtRESTServer(cfg)
+	if err != nil {
+		t.Fatalf("Failed to create ctRestServer")
 	}
+	ctrs.initializeRoutes()
 
 	numiter := int(10)
 	sK := make([]*ctgo.SecretKey, numiter)
@@ -112,6 +111,6 @@ func TestNewCtRestServer(t *testing.T) {
 
 	fmt.Println("Response : " + string(jsonbytes))
 
-	cfg.ms.Close()
+	cfg.MStore.Close()
 	os.RemoveAll(dirname)
 }
