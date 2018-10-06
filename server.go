@@ -2314,11 +2314,9 @@ func (s *server) Stop() error {
 		return nil
 	})
 
-	defer func() {
-		// Ensure the message service is sync'd and closed on shutdown.
-		ctmxLog.Infof("Gracefully shutting down the ciphrtxt message service...")
-		s.ctMsgSvc.Close()
-	}()
+	// Ensure the message service is sync'd and closed on shutdown.
+	ctmxLog.Infof("Shutting down the ciphrtxt message service...")
+	s.ctMsgSvc.Close()
 
 	// Signal the remaining goroutines to quit.
 	close(s.quit)
