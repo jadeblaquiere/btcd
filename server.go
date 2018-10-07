@@ -2314,9 +2314,11 @@ func (s *server) Stop() error {
 		return nil
 	})
 
-	// Ensure the message service is sync'd and closed on shutdown.
-	ctmxLog.Infof("Shutting down the ciphrtxt message service...")
-	s.ctMsgSvc.Close()
+	if cfg.CtBlueNet {
+		// Ensure the message service is sync'd and closed on shutdown.
+		ctmxLog.Infof("Shutting down the ciphrtxt message service...")
+		s.ctMsgSvc.Close()
+	}
 
 	// Signal the remaining goroutines to quit.
 	close(s.quit)
