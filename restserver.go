@@ -146,9 +146,9 @@ func (ctrs *ctRestServer) listMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrs *ctRestServer) initializeRoutes() {
-	ctrs.Router.HandleFunc("/messages/{msgid:[0-9abcdefABCDEF]+}", ctrs.getMessage).Methods("GET")
-	ctrs.Router.HandleFunc("/messages/", ctrs.listMessages).Methods("GET")
-	ctrs.Router.HandleFunc("/messages/", ctrs.postMessage).Methods("POST")
+	ctrs.Router.HandleFunc("/api/v1/messages/{msgid:[0-9abcdefABCDEF]+}", ctrs.getMessage).Methods("GET")
+	ctrs.Router.HandleFunc("/api/v1/messages/", ctrs.listMessages).Methods("GET")
+	ctrs.Router.HandleFunc("/api/v1/messages/", ctrs.postMessage).Methods("POST")
 }
 
 func newCtRESTServer(cfg *restServerConfig) (ctrs *ctRestServer, err error) {
