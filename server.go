@@ -2947,6 +2947,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 		s.restServer, err = newCtRESTServer(&restServerConfig{
 			Listeners: restListeners,
 			MStore:    s.ctMsgSvc.MStore,
+			Server:		 &s,
 		})
 		if err != nil {
 			return nil, err

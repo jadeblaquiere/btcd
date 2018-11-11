@@ -47,6 +47,7 @@ type restServerConfig struct {
 	Listeners []net.Listener
 
 	MStore *ctgo.MessageStore
+	Server *server
 }
 
 type ctRestServer struct {
@@ -145,10 +146,33 @@ func (ctrs *ctRestServer) listMessages(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, lmr)
 }
 
+type PeerInfo struct {
+	Address	string	`json:address`
+	Inbound bool `json:inbound`
+	Useragent string `json:useragent`
+}
+
+func (ctrs *ctRestServer) listPeers(w http.ResponseWriter, r *http.Request) {
+	replyChan := make(chan []*serverPeer)
+	ctrs.cfg.Server.query <- getPeersMsg{reply: replyChan}
+	serverPeers := <-replyChan
+
+  plist := make([]*PeerInfo, 0)
+	for _, sp := range serverPeers {
+		pi := new(PeerInfo)
+		pi.Address = sp.Addr()
+		pi.Inbound = sp.Inbound()
+		pi.Useragent = sp.UserAgent()
+		plist = append(plist, pi)
+	}
+	respondWithJSON(w, http.StatusOK, plist)
+}
+
 func (ctrs *ctRestServer) initializeRoutes() {
 	ctrs.Router.HandleFunc("/api/v1/messages/{msgid:[0-9abcdefABCDEF]+}", ctrs.getMessage).Methods("GET")
 	ctrs.Router.HandleFunc("/api/v1/messages/", ctrs.listMessages).Methods("GET")
 	ctrs.Router.HandleFunc("/api/v1/messages/", ctrs.postMessage).Methods("POST")
+	ctrs.Router.HandleFunc("/api/v1/peers/", ctrs.listPeers).Methods("GET")
 }
 
 func newCtRESTServer(cfg *restServerConfig) (ctrs *ctRestServer, err error) {
