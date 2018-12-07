@@ -1,3 +1,7 @@
+# Executables
+cttd
+cmd/cttctl/cttctl
+
 # Temp files
 *~
 
